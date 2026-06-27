@@ -16,12 +16,6 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/ExyHyperBrick/android_kernel_samsung_exynos9810.git kernel-src
         cd kernel-src
-        # Initialize a fake git environment so the KernelSU script works
-        git init
-        git config user.name "Builder"
-        git config user.email "builder@test.com"
-        git add .
-        git commit -m "Initial" --allow-empty
 
     - name: Patch KernelSU Next
       run: |
@@ -42,9 +36,12 @@ jobs:
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
         
-        # Build configuration
+        # Build configuration (this picks up the appended CONFIG_ lines)
         make exynos9810-universal_defconfig
-        
+
+        # Accept defaults for any NEW Kconfig options non-interactively
+        make olddefconfig
+
         # Compile using all available CPU cores
         make -j$(nproc)
 
