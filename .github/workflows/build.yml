@@ -44,7 +44,7 @@ jobs:
       run: |
         cd kernel-src
         export ARCH=arm64
-        export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain-gcc/bin/aarch64-linux-android-
+        export CROSS_COMPILE=${{ github.workspace }}/toolchain-gcc/bin/aarch64-linux-android-
         
         # Build configuration
         make exynos9810-universal_defconfig
