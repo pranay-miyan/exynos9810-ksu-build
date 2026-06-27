@@ -1,0 +1,59 @@
+name: Build Samsung Exynos 9810 Kernel with KSU Next
+
+on:
+  workflow_dispatch: # Allows you to manually trigger the build with a button
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Install Build Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc build-essential libncurses5-dev libssl-dev bison flex libelf-dev glibc-source libcap-dev gcc-aarch64-linux-gnu jq curl git
+
+    - name: Clone Kernel Source
+      run: |
+        git clone --depth=1 https://github.com/ExyHyperBrick/android_kernel_samsung_exynos9810.git kernel-src
+        cd kernel-src
+        # Initialize a fake git environment so the KernelSU script works
+        git init
+        git config user.name "Builder"
+        git config user.email "builder@test.com"
+        git add .
+        git commit -m "Initial"
+
+    - name: Patch KernelSU Next
+      run: |
+        cd kernel-src
+        curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+
+    - name: Configure Defconfig for KSU
+      run: |
+        cd kernel-src
+        # Inject required KSU configurations into the Samsung Exynos 9810 config file
+        echo "CONFIG_MODULES=y" >> arch/arm64/configs/exynos9810-universal_defconfig
+        echo "CONFIG_KSU=y" >> arch/arm64/configs/exynos9810-universal_defconfig
+        echo "CONFIG_KSU_NEXT=y" >> arch/arm64/configs/exynos9810-universal_defconfig
+
+    - name: Download Google GCC Toolchain
+      run: |
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain-gcc
+
+    - name: Compile Kernel
+      run: |
+        cd kernel-src
+        export ARCH=arm64
+        export CROSS_COMPILE=$GITHUB_WORKSPACE/toolchain-gcc/bin/aarch64-linux-android-
+        
+        # Build configuration
+        make exynos9810-universal_defconfig
+        
+        # Compile using all available CPU cores
+        make -j$(nproc)
+
+    - name: Upload Compiled Kernel File
+      uses: actions/upload-artifact@v4
+      with:
+        name: Compiled-Kernel-Image
+        path: kernel-src/arch/arm64/boot/Image.gz-dtb
