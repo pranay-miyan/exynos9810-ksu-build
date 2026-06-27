@@ -21,7 +21,7 @@ jobs:
         git config user.name "Builder"
         git config user.email "builder@test.com"
         git add .
-        git commit -m "Initial"
+        git commit -m "Initial" --allow-empty
 
     - name: Patch KernelSU Next
       run: |
