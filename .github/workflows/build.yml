@@ -10,7 +10,7 @@ jobs:
     - name: Install Build Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc build-essential libncurses5-dev libssl-dev bison flex libelf-dev glibc-source libcap-dev gcc-aarch64-linux-gnu jq curl git
+        sudo apt-get install -y bc build-essential libncurses5-dev libssl-dev bison flex libelf-dev glibc-source libcap-dev gcc-aarch64-linux-gnu jq curl git zip
 
     - name: Clone Kernel Source
       run: |
@@ -48,8 +48,26 @@ jobs:
         # Compile using all available CPU cores
         make -j$(nproc)
 
-    - name: Upload Compiled Kernel File
+    - name: Package with AnyKernel3
+      run: |
+        git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
+        # Clean out generic template image footprints
+        rm -f anykernel/Image* anykernel/zImage*
+        
+        # Copy your fresh compiled build into the zip container
+        cp kernel-src/arch/arm64/boot/Image.gz-dtb anykernel/Image.gz-dtb
+        
+        # Turn off the strict device check block so it installs smoothly on Lineage Recovery
+        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' anykernel/anykernel.sh
+        
+        # Adjust the flash script block target to point to Samsung's standard boot location
+        sed -i 's|block=/dev/block/bootdevice/by-name/boot;|block=/dev/block/by-name/boot;|g' anykernel/anykernel.sh
+        
+        cd anykernel
+        zip -r9 ../Exynos9810-KSU-Next.zip *
+
+    - name: Upload Flashable Kernel Zip
       uses: actions/upload-artifact@v4
       with:
-        name: Compiled-Kernel-Image
-        path: kernel-src/arch/arm64/boot/Image.gz-dtb
+        name: Flashable-Kernel
+        path: Exynos9810-KSU-Next.zip
