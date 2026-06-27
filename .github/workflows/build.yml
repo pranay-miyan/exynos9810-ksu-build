@@ -36,18 +36,11 @@ jobs:
         echo "CONFIG_KSU=y" >> arch/arm64/configs/exynos9810-universal_defconfig
         echo "CONFIG_KSU_NEXT=y" >> arch/arm64/configs/exynos9810-universal_defconfig
 
-    - name: Download Google GCC Toolchain
-      run: |
-        cd kernel-src
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain-gcc
-        # Verify toolchain was downloaded
-        ls -la toolchain-gcc/bin/aarch64-linux-android-gcc || exit 1
-
     - name: Compile Kernel
       run: |
         cd kernel-src
         export ARCH=arm64
-        export CROSS_COMPILE=./toolchain-gcc/bin/aarch64-linux-android-
+        export CROSS_COMPILE=aarch64-linux-gnu-
         
         # Build configuration
         make exynos9810-universal_defconfig
