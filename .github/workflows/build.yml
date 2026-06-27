@@ -38,13 +38,16 @@ jobs:
 
     - name: Download Google GCC Toolchain
       run: |
+        cd kernel-src
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain-gcc
+        # Verify toolchain was downloaded
+        ls -la toolchain-gcc/bin/aarch64-linux-android-gcc || exit 1
 
     - name: Compile Kernel
       run: |
         cd kernel-src
         export ARCH=arm64
-        export CROSS_COMPILE=${{ github.workspace }}/toolchain-gcc/bin/aarch64-linux-android-
+        export CROSS_COMPILE=./toolchain-gcc/bin/aarch64-linux-android-
         
         # Build configuration
         make exynos9810-universal_defconfig
